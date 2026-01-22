@@ -42,13 +42,23 @@ def main() -> int:
 
     df_raw = load_isot(args.true_csv, args.fake_csv)
     df_raw = add_ids(df_raw)
-    df_split = stratified_split(
-        df_raw,
-        train_size=float(splits["train_size"]),
-        val_size=float(splits["val_size"]),
-        test_size=float(splits["test_size"]),
-        seed=int(splits["random_seed"]),
-    )
+
+    train_size = float(splits["train_size"])
+    val_size = float(splits["val_size"])
+    test_size = float(splits["test_size"])
+
+    if val_size == 0.0 and test_size == 0.0:
+        df_split = df_raw.copy()
+        df_split["split"] = "train"
+    else:
+        df_split = stratified_split(
+            df_raw,
+            train_size=train_size,
+            val_size=val_size,
+            test_size=test_size,
+            seed=int(splits["random_seed"]),
+        )
+
     df_can = to_canonical(df_split)
 
     # Validate and write report
