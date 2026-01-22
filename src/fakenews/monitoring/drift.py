@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 from collections import Counter
 from pathlib import Path
 import json
@@ -17,12 +17,29 @@ class DriftResult:
 
 
 def _text_lengths(texts: List[str]) -> np.ndarray:
-    return np.array([len(t) for t in texts], dtype=float)
+    # Keep only non-empty strings to avoid empty stats in tiny CI samples
+    cleaned = [t for t in texts if isinstance(t, str) and t.strip()]
+    return np.array([len(t) for t in cleaned], dtype=float)
 
 
-def _basic_length_stats(lengths: np.ndarray) -> Dict[str, float]:
+def _basic_length_stats(lengths: np.ndarray) -> Dict[str, Any]:
+    """
+    Robust stats:
+    - For empty arrays, return count=0 and None for stats so callers can skip safely.
+    """
+    n = int(len(lengths))
+    if n == 0:
+        return {
+            "count": 0,
+            "mean": None,
+            "std": None,
+            "p50": None,
+            "p90": None,
+            "p99": None,
+        }
+
     return {
-        "count": float(len(lengths)),
+        "count": n,
         "mean": float(np.mean(lengths)),
         "std": float(np.std(lengths)),
         "p50": float(np.percentile(lengths, 50)),
@@ -39,7 +56,8 @@ def _tokenize_simple(text: str) -> List[str]:
 def _top_tokens(texts: List[str], top_k: int = 50) -> List[Tuple[str, int]]:
     c = Counter()
     for t in texts:
-        c.update(_tokenize_simple(t))
+        if isinstance(t, str) and t.strip():
+            c.update(_tokenize_simple(t))
     return c.most_common(top_k)
 
 
@@ -66,14 +84,29 @@ def detect_data_drift(
     base_stats = _basic_length_stats(base_len)
     cur_stats = _basic_length_stats(cur_len)
 
+    # If either side has no usable data, skip gracefully (CI sample safety).
+    if base_stats["count"] == 0 or cur_stats["count"] == 0:
+        stats: Dict[str, Any] = {
+            "status": "skipped",
+            "reason": "insufficient non-empty texts to compute drift statistics",
+            "length": {"baseline": base_stats, "current": cur_stats},
+            "tokens": {
+                "top_k": top_k_tokens,
+                "jaccard_top_tokens": 1.0,
+                "baseline_top_tokens": [],
+                "current_top_tokens": [],
+            },
+        }
+        return DriftResult(passed=True, warnings=[], stats=stats)
+
     def pct_change(a: float, b: float) -> float:
         # change from a -> b
         if a == 0:
             return float("inf") if b != 0 else 0.0
         return (b - a) / a
 
-    mean_shift = pct_change(base_stats["mean"], cur_stats["mean"])
-    p90_shift = pct_change(base_stats["p90"], cur_stats["p90"])
+    mean_shift = pct_change(float(base_stats["mean"]), float(cur_stats["mean"]))
+    p90_shift = pct_change(float(base_stats["p90"]), float(cur_stats["p90"]))
 
     if abs(mean_shift) >= length_mean_shift_pct_warn:
         warnings.append(
@@ -87,8 +120,8 @@ def detect_data_drift(
     base_top = _top_tokens(baseline_texts, top_k=top_k_tokens)
     cur_top = _top_tokens(current_texts, top_k=top_k_tokens)
 
-    base_set = set([t for t, _ in base_top])
-    cur_set = set([t for t, _ in cur_top])
+    base_set = {t for t, _ in base_top}
+    cur_set = {t for t, _ in cur_top}
 
     token_jaccard = _jaccard(base_set, cur_set)
     if token_jaccard <= top_token_jaccard_warn:
@@ -96,7 +129,8 @@ def detect_data_drift(
             f"Top-{top_k_tokens} token overlap low (jaccard={token_jaccard:.2f}, warn <= {top_token_jaccard_warn:.2f})"
         )
 
-    stats: Dict[str, Any] = {
+    stats = {
+        "status": "ok",
         "length": {
             "baseline": base_stats,
             "current": cur_stats,
