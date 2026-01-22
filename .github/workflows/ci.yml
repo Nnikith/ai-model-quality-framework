@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
@@ -25,18 +25,19 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Create virtual environment
+        run: |
+          uv venv --python python3.11
+          echo ".venv/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: |
-          uv venv
-          source .venv/bin/activate
           uv pip install -e ".[dev,nlp,monitoring]"
 
       - name: Lint (ruff)
         run: |
-          source .venv/bin/activate
           ruff check .
 
       - name: Test (pytest)
         run: |
-          source .venv/bin/activate
           pytest -q
