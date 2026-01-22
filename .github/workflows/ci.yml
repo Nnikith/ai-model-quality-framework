@@ -30,9 +30,10 @@ jobs:
           uv venv --python python3.11
           echo ".venv/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
+      - name: Install project + dev tools
         run: |
           uv pip install -e .
+          uv pip install ruff pytest fastapi uvicorn scikit-learn pandas joblib pydantic
 
       - name: Lint (ruff)
         run: |
