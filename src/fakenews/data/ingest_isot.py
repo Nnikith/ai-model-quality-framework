@@ -75,8 +75,8 @@ def stratified_split(
     """Add a 'split' column with train/val/test splits.
 
     Uses stratification when possible. For very small datasets where stratification
-    is not feasible (e.g., not enough samples per class), falls back to non-stratified
-    splitting to keep the pipeline testable and robust.
+    is not feasible, falls back to non-stratified splitting.
+    Supports edge cases where val_size or test_size may be 0.0, including train_size=1.0.
     """
     from sklearn.model_selection import train_test_split
 
@@ -87,30 +87,67 @@ def stratified_split(
 
     def can_stratify(y: pd.Series) -> bool:
         counts = y.value_counts()
-        # Need at least 2 samples per class for stratified splitting
         return (counts.min() >= 2) and (counts.shape[0] >= 2)
 
-    # First split: train vs temp
+    # If everything goes to train, avoid train_test_split entirely
+    if train_size == 1.0:
+        return df.assign(split="train")
+
     stratify_y = df["label"] if can_stratify(df["label"]) else None
     train_df, temp_df = train_test_split(
         df, train_size=train_size, stratify=stratify_y, random_state=seed
     )
 
-    # Second split: val vs test from temp
+    # If no remaining data (shouldn't happen unless train_size==1.0), still be safe
+    if len(temp_df) == 0:
+        return train_df.assign(split="train")
+
+    # If val_size == 0, everything remaining becomes test
+    if val_size == 0.0 and test_size > 0.0:
+        out = pd.concat(
+            [train_df.assign(split="train"), temp_df.assign(split="test")],
+            ignore_index=True,
+        )
+        return out
+
+    # If test_size == 0, everything remaining becomes val
+    if test_size == 0.0 and val_size > 0.0:
+        out = pd.concat(
+            [train_df.assign(split="train"), temp_df.assign(split="val")],
+            ignore_index=True,
+        )
+        return out
+
+    # Otherwise split temp into val/test
     remaining = 1.0 - train_size
     test_frac_of_temp = test_size / remaining
 
-    stratify_temp = temp_df["label"] if can_stratify(temp_df["label"]) else None
+    # Second split: val vs test
+    remaining = 1.0 - train_size
+    test_frac_of_temp = test_size / remaining
+
+    # For very small temp sets, never stratify — sklearn will crash
+    stratify_temp = None
+    if can_stratify(temp_df["label"]) and len(temp_df) >= 4:
+        stratify_temp = temp_df["label"]
+
     val_df, test_df = train_test_split(
-        temp_df, test_size=test_frac_of_temp, stratify=stratify_temp, random_state=seed
+        temp_df,
+        test_size=test_frac_of_temp,
+        stratify=stratify_temp,
+        random_state=seed,
     )
 
-    train_df = train_df.assign(split="train")
-    val_df = val_df.assign(split="val")
-    test_df = test_df.assign(split="test")
-
-    out = pd.concat([train_df, val_df, test_df], ignore_index=True)
+    out = pd.concat(
+        [
+            train_df.assign(split="train"),
+            val_df.assign(split="val"),
+            test_df.assign(split="test"),
+        ],
+        ignore_index=True,
+    )
     return out
+
 
 
 def to_canonical(df: pd.DataFrame) -> pd.DataFrame:
