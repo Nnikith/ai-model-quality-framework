@@ -14,7 +14,9 @@ DEFAULT_MODEL_DIR = Path("artifacts/models/v1")
 
 class PredictRequest(BaseModel):
     text: str = Field(..., min_length=1, description="News text to classify")
-    request_id: Optional[str] = Field(default=None, description="Optional client-provided request id")
+    request_id: Optional[str] = Field(
+        default=None, description="Optional client-provided request id"
+    )
 
 
 class PredictResponse(BaseModel):

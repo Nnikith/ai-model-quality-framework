@@ -1,6 +1,7 @@
 import pandas as pd
 from fakenews.data.validate import validate_dataframe
 
+
 def make_valid_df() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -60,6 +61,7 @@ def test_rejects_empty_text():
     df.loc[1, "text"] = "   "
     assert (df["text"].str.strip() == "").sum() > 0
 
+
 def test_validate_dataframe_passes_on_valid_data():
     df = make_valid_df()
     result = validate_dataframe(df)
@@ -93,6 +95,7 @@ def test_validate_dataframe_fails_on_invalid_split():
     result = validate_dataframe(df)
     assert result.passed is False
     assert any("split" in e.lower() for e in result.errors)
+
 
 def test_validate_dataframe_writes_report(tmp_path):
     from fakenews.data.validate import validate_dataframe

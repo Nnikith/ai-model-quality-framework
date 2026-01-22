@@ -11,13 +11,17 @@ from fakenews.evaluation.gates import check_v1_gates
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Train v1 baseline model (TF-IDF + Logistic Regression).")
+    parser = argparse.ArgumentParser(
+        description="Train v1 baseline model (TF-IDF + Logistic Regression)."
+    )
     parser.add_argument("--dataset", default="data/processed/isot.parquet")
     parser.add_argument("--eval-config", default="configs/eval.yaml")
     parser.add_argument("--out-dir", default="artifacts/models/v1")
     args = parser.parse_args()
 
-    artifacts = train_v1(dataset_path=args.dataset, eval_config_path=args.eval_config, out_dir=args.out_dir)
+    artifacts = train_v1(
+        dataset_path=args.dataset, eval_config_path=args.eval_config, out_dir=args.out_dir
+    )
 
     report = pd.read_json(artifacts.metrics_path, typ="series").to_dict()
     eval_cfg = yaml.safe_load(Path(args.eval_config).read_text())

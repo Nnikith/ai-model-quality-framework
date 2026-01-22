@@ -54,6 +54,7 @@ def test_invariance_case_and_punctuation_small_change():
     # Tolerance: max difference <= 0.20 for these mild perturbations
     assert max(probs) - min(probs) <= 0.20
 
+
 @pytest.mark.xfail(
     reason="Known limitation of TF-IDF v1 baseline: sensitive to tokenization and typos. Expected to improve in v2.",
     strict=False,
