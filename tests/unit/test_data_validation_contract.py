@@ -94,3 +94,16 @@ def test_validate_dataframe_fails_on_invalid_split():
     result = validate_dataframe(df)
     assert result.passed is False
     assert any("split" in e.lower() for e in result.errors)
+
+def test_validate_dataframe_writes_report(tmp_path):
+    from fakenews.data.validate import validate_dataframe
+
+    df = make_valid_df()
+    report_file = tmp_path / "report.json"
+
+    result = validate_dataframe(df, dataset_name="unit_test", report_path=report_file)
+
+    assert result.passed is True
+    assert report_file.exists()
+    content = report_file.read_text()
+    assert "unit_test" in content
