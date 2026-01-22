@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 from fakenews.data.validate import validate_dataframe
 
 def make_valid_df() -> pd.DataFrame:
