@@ -19,8 +19,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Ingest Kaggle ISOT Fake/Real News dataset into canonical format."
     )
-    parser.add_argument("--true-csv", required=True, help="Path to True.csv")
-    parser.add_argument("--fake-csv", required=True, help="Path to Fake.csv")
+    parser.add_argument("--true-csv", default="data/raw/isot/True.csv")
+    parser.add_argument("--fake-csv", default="data/raw/isot/Fake.csv")
     parser.add_argument("--config", default="configs/data.yaml", help="Path to data config yaml")
     parser.add_argument(
         "--out", default="data/processed/isot.parquet", help="Output processed dataset path"
