@@ -38,8 +38,8 @@ jobs:
       - name: Generate processed dataset (CI sample)
         run: |
           python scripts/ingest_isot.py \
-            --true-csv data/raw/sample/True.csv \
-            --fake-csv data/raw/sample/Fake.csv
+          --true-csv data/raw/sample/true.csv \
+          --fake-csv data/raw/sample/fake.csv
 
       - name: Run data drift report
         run: |
