@@ -39,7 +39,8 @@ jobs:
         run: |
           python scripts/ingest_isot.py \
           --true-csv data/raw/sample/true.csv \
-          --fake-csv data/raw/sample/fake.csv
+          --fake-csv data/raw/sample/fake.csv \
+          --out data/processed/isot.parquet
 
       - name: Run data drift report
         run: |
