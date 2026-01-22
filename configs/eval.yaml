@@ -1,0 +1,42 @@
+metrics:
+  primary: "f1"
+  report: ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"]
+  average: "binary"
+
+thresholding:
+  strategy: "fixed_0_5"   # v1 milestone uses 0.5; later we can do tuned threshold
+  default_threshold: 0.5
+
+gates:
+  v1_baseline:
+    min_f1: 0.70
+    min_pr_auc: 0.70
+    max_f1_drop_vs_previous: 0.03   # regression guard after first baseline is established
+
+  v2_improved:
+    min_f1: 0.75
+    min_pr_auc: 0.75
+    min_improvement_over_v1_f1: 0.03
+
+slice_evaluation:
+  enabled: true
+  slices:
+    - name: "text_len_short"
+      type: "text_length"
+      min_chars: 10
+      max_chars: 80
+    - name: "text_len_medium"
+      type: "text_length"
+      min_chars: 81
+      max_chars: 300
+    - name: "text_len_long"
+      type: "text_length"
+      min_chars: 301
+      max_chars: 20000
+
+slice_gates:
+  enabled: true
+  min_f1_per_slice: 0.60
+
+calibration:
+  enabled: false   # turn on in v1.1

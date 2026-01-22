@@ -1,0 +1,37 @@
+dataset:
+  name: "TBD"
+  source: "TBD"
+  task: "binary_classification"   # fake vs real
+  text_column: "text"
+  label_column: "label"
+  label_mapping:
+    fake: 1
+    real: 0
+
+schema:
+  required_columns: ["text", "label"]
+  text_min_chars: 10
+  text_max_chars: 20000
+  allow_null_text: false
+  allow_empty_text: false
+
+splits:
+  strategy: "stratified"
+  train_size: 0.8
+  val_size: 0.1
+  test_size: 0.1
+  random_seed: 42
+
+data_quality:
+  max_null_text_pct: 0.0
+  max_empty_text_pct: 0.0
+  max_duplicate_pct: 1.0
+
+leakage:
+  check_exact_duplicates_across_splits: true
+  # near-duplicate can be added later (e.g., minhash / simhash)
+  check_near_duplicates_across_splits: false
+
+sampling_for_ci:
+  enabled: true
+  max_rows: 2000

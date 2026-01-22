@@ -1,0 +1,31 @@
+drift:
+  enabled: true
+
+  baseline:
+    # baseline stats computed from training data
+    store_path: "artifacts/monitoring/baseline.json"
+
+  features:
+    v1:
+      method: "tfidf_summary"
+      track:
+        - "text_length"
+        - "avg_word_length"
+        - "whitespace_ratio"
+    v2:
+      method: "embedding_summary"
+      embedding_name: "cls_pooled"  # placeholder
+
+  thresholds:
+    psi_warning: 0.10
+    psi_alert: 0.25
+    prediction_confidence_shift_warning: 0.10
+    prediction_confidence_shift_alert: 0.20
+
+alerts:
+  mode: "report_only"  # v1: just generate reports; later can integrate notifications
+  report_path: "artifacts/reports/drift_report.json"
+
+scheduling:
+  ci_run: false
+  cron: "0 2 * * 1"   # weekly Monday 2am (future GitHub Actions schedule)
