@@ -2,10 +2,6 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-data/
-data/raw/
-data/interim/
-data/processed/
 artifacts/
 .DS_Store
 .env
@@ -14,3 +10,11 @@ artifacts/
 *.egg-info/
 build/
 dist/
+
+
+# Ignore all datasets by default (large files)
+data/**
+
+# ...but keep a tiny sample dataset for CI
+!data/raw/sample/
+!data/raw/sample/**
