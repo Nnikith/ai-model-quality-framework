@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-
+from fakenews.data.validate import validate_dataframe
 
 def make_valid_df() -> pd.DataFrame:
     return pd.DataFrame(
@@ -60,3 +60,37 @@ def test_rejects_empty_text():
     df = make_valid_df()
     df.loc[1, "text"] = "   "
     assert (df["text"].str.strip() == "").sum() > 0
+
+def test_validate_dataframe_passes_on_valid_data():
+    df = make_valid_df()
+    result = validate_dataframe(df)
+
+    assert result.passed is True
+    assert result.errors == []
+    assert result.stats["rows_total"] == 3
+
+
+def test_validate_dataframe_fails_on_missing_columns():
+    df = make_valid_df().drop(columns=["text"])
+    result = validate_dataframe(df)
+
+    assert result.passed is False
+    assert any("Missing required columns" in e for e in result.errors)
+
+
+def test_validate_dataframe_fails_on_bad_label():
+    df = make_valid_df()
+    df.loc[0, "label"] = 5
+
+    result = validate_dataframe(df)
+    assert result.passed is False
+    assert any("binary" in e.lower() for e in result.errors)
+
+
+def test_validate_dataframe_fails_on_invalid_split():
+    df = make_valid_df()
+    df.loc[0, "split"] = "training"
+
+    result = validate_dataframe(df)
+    assert result.passed is False
+    assert any("split" in e.lower() for e in result.errors)
