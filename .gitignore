@@ -1,8 +1,25 @@
+# Ignore virtualenv + cache
 .venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-artifacts/
+
+# Ignore all data by default (large)
+data/**
+
+# Allow the folder structure so sample files can be tracked
+!data/
+!data/raw/
+!data/raw/sample/
+!data/raw/sample/**
+
+# Ignore processed/interim outputs (generated)
+data/interim/**
+data/processed/**
+
+# Ignore artifacts (generated)
+artifacts/**
+
 .DS_Store
 .env
 
@@ -10,11 +27,3 @@ artifacts/
 *.egg-info/
 build/
 dist/
-
-
-# Ignore all datasets by default (large files)
-data/**
-
-# ...but keep a tiny sample dataset for CI
-!data/raw/sample/
-!data/raw/sample/**
