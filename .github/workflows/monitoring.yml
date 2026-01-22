@@ -6,6 +6,13 @@ on:
     # Weekly on Sundays at 06:00 UTC
     - cron: "0 6 * * 0"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: monitoring-drift-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   drift:
     runs-on: ubuntu-latest
@@ -33,16 +40,18 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install -e ".[monitoring]"
-          # parquet reader for pandas
           uv pip install pyarrow
 
-      - name: Debug sample files exist
+      - name: Ensure output directories exist
         run: |
-          ls -la data/raw/sample
+          mkdir -p artifacts/monitoring artifacts/reports artifacts/models/v1 data/processed
+
+      - name: Verify CI sample exists
+        run: |
           test -f data/raw/sample/true.csv
           test -f data/raw/sample/fake.csv
 
-      - name: Generate processed dataset (CI sample)
+      - name: Ingest CI sample dataset
         run: |
           python scripts/ingest_isot.py \
             --true-csv data/raw/sample/true.csv \
@@ -51,21 +60,45 @@ jobs:
             --out data/processed/isot.parquet \
             --manifest artifacts/reports/split_manifest.json \
             --report artifacts/reports/data_validation.json
+          test -f data/processed/isot.parquet
 
-      - name: Run data drift report
+      - name: Train v1 model (required for prediction drift)
         run: |
-          python scripts/run_drift_report.py --out artifacts/monitoring/drift_report.json
+          python scripts/train_v1.py \
+            --dataset data/processed/isot.parquet \
+            --eval-config configs/eval.yaml \
+            --out-dir artifacts/models/v1
+          test -f artifacts/models/v1/model.joblib
+          test -f artifacts/models/v1/vectorizer.joblib
 
-      - name: Run prediction drift report
+      - name: Run data drift detection
         run: |
-          python scripts/run_prediction_drift.py --out artifacts/monitoring/pred_drift_report.json
+          python scripts/run_drift_report.py \
+            --dataset data/processed/isot.parquet \
+            --baseline-split train \
+            --current-split test \
+            --out artifacts/monitoring/drift_report.json
+          test -f artifacts/monitoring/drift_report.json
 
-      - name: Upload monitoring reports
+      - name: Run prediction drift detection
+        run: |
+          python scripts/run_prediction_drift.py \
+            --dataset data/processed/isot.parquet \
+            --baseline-split train \
+            --current-split test \
+            --model-dir artifacts/models/v1 \
+            --out artifacts/monitoring/pred_drift_report.json
+          test -f artifacts/monitoring/pred_drift_report.json
+
+      - name: Upload monitoring artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: drift-reports
+          name: monitoring-artifacts
+          if-no-files-found: warn
+          retention-days: 14
           path: |
-            artifacts/monitoring/drift_report.json
-            artifacts/monitoring/pred_drift_report.json
-            artifacts/reports/data_validation.json
-            artifacts/reports/split_manifest.json
+            artifacts/monitoring/**
+            artifacts/reports/**
+            artifacts/models/v1/**
+            data/processed/isot.parquet

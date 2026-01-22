@@ -15,14 +15,16 @@ schema:
   allow_null_text: false
   allow_empty_text: false
 
-# CI drift job does NOT need train/val/test splits.
-# Keep everything in "train" to avoid stratified split failures on tiny sample.
+# CI drift job needs a test split because prediction drift compares train vs test.
+# Avoid brittle tiny-sample stratification issues by letting code fall back when needed.
 splits:
   strategy: "stratified"
-  train_size: 1.0
-  val_size: 0.0
-  test_size: 0.0
+  train_size: 0.8
+  val_size: 0.1
+  test_size: 0.1
   random_seed: 42
+
+
 
 data_quality:
   max_null_text_pct: 0.0
