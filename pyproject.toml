@@ -45,6 +45,7 @@ hf = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = ["data", "artifacts", ".venv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
