@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
 
 import pandas as pd
 
@@ -48,7 +47,11 @@ def load_isot(true_csv: str | Path, fake_csv: str | Path) -> pd.DataFrame:
         df["date"] = parsed.where(parsed.notna(), None)
 
     # Construct final text: title + "\n\n" + text (title optional)
-    df["text"] = (df["title"].astype(str).str.strip() + "\n\n" + df["text"].astype(str).str.strip()).str.strip()
+    df["text"] = (
+        df["title"].astype(str).str.strip()
+        + "\n\n"
+        + df["text"].astype(str).str.strip()
+    ).str.strip()
 
     # Add source field
     df["source"] = "kaggle_isot_fake_and_real_news"
@@ -76,7 +79,11 @@ def stratified_split(
 
     Uses stratification when possible. For very small datasets where stratification
     is not feasible, falls back to non-stratified splitting.
-    Supports edge cases where val_size or test_size may be 0.0, including train_size=1.0.
+
+    Robustness goals:
+    - Avoid sklearn errors on tiny datasets (e.g., holdout size < #classes)
+    - Support val_size == 0.0 or test_size == 0.0 without doing a second split
+    - Support train_size == 1.0
     """
     from sklearn.model_selection import train_test_split
 
@@ -87,15 +94,30 @@ def stratified_split(
 
     def can_stratify(y: pd.Series) -> bool:
         counts = y.value_counts()
-        return (counts.min() >= 2) and (counts.shape[0] >= 2)
+        # Need at least 2 classes and at least 2 samples per class
+        return (counts.shape[0] >= 2) and (counts.min() >= 2)
 
     # If everything goes to train, avoid train_test_split entirely
     if train_size == 1.0:
         return df.assign(split="train")
 
-    stratify_y = df["label"] if can_stratify(df["label"]) else None
+    n = len(df)
+    classes = int(df["label"].nunique())
+
+    # Sklearn requires each split in stratified splitting to have at least one
+    # sample from each class. A necessary condition is: holdout_size >= #classes.
+    holdout_size = int(round(n * (1.0 - train_size)))
+    if holdout_size < classes:
+        stratify_y = None
+    else:
+        stratify_y = df["label"] if can_stratify(df["label"]) else None
+
+    # First split: train vs temp
     train_df, temp_df = train_test_split(
-        df, train_size=train_size, stratify=stratify_y, random_state=seed
+        df,
+        train_size=train_size,
+        stratify=stratify_y,
+        random_state=seed,
     )
 
     # If no remaining data (shouldn't happen unless train_size==1.0), still be safe
@@ -104,32 +126,29 @@ def stratified_split(
 
     # If val_size == 0, everything remaining becomes test
     if val_size == 0.0 and test_size > 0.0:
-        out = pd.concat(
+        return pd.concat(
             [train_df.assign(split="train"), temp_df.assign(split="test")],
             ignore_index=True,
         )
-        return out
 
     # If test_size == 0, everything remaining becomes val
     if test_size == 0.0 and val_size > 0.0:
-        out = pd.concat(
+        return pd.concat(
             [train_df.assign(split="train"), temp_df.assign(split="val")],
             ignore_index=True,
         )
-        return out
 
     # Otherwise split temp into val/test
     remaining = 1.0 - train_size
     test_frac_of_temp = test_size / remaining
 
-    # Second split: val vs test
-    remaining = 1.0 - train_size
-    test_frac_of_temp = test_size / remaining
-
-    # For very small temp sets, never stratify — sklearn will crash
-    stratify_temp = None
-    if can_stratify(temp_df["label"]) and len(temp_df) >= 4:
-        stratify_temp = temp_df["label"]
+    # For tiny temp sets, stratification may still fail. Only stratify if the temp
+    # set can support both splits containing at least one sample per class.
+    # A conservative sufficient check: temp size >= 2 * #classes and per-class >= 2.
+    if len(temp_df) < max(2 * classes, 4):
+        stratify_temp = None
+    else:
+        stratify_temp = temp_df["label"] if can_stratify(temp_df["label"]) else None
 
     val_df, test_df = train_test_split(
         temp_df,
@@ -138,7 +157,7 @@ def stratified_split(
         random_state=seed,
     )
 
-    out = pd.concat(
+    return pd.concat(
         [
             train_df.assign(split="train"),
             val_df.assign(split="val"),
@@ -146,13 +165,12 @@ def stratified_split(
         ],
         ignore_index=True,
     )
-    return out
-
 
 
 def to_canonical(df: pd.DataFrame) -> pd.DataFrame:
     """Return canonical schema dataframe."""
     cols = ["id", "text", "label", "source", "subject", "date", "split"]
+    df = df.copy()
     # Ensure missing optional columns exist
     if "subject" not in df.columns:
         df["subject"] = None
