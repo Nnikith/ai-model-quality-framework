@@ -8,3 +8,8 @@ data/processed/
 artifacts/
 .DS_Store
 .env
+
+# packaging/build artifacts
+*.egg-info/
+build/
+dist/

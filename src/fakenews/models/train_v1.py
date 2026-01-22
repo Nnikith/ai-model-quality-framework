@@ -93,7 +93,6 @@ def train_v1(
 
     model = LogisticRegression(
         max_iter=2000,
-        n_jobs=-1,
         class_weight="balanced",
         random_state=42,
     )

@@ -1,9 +1,11 @@
 dataset:
-  name: "TBD"
-  source: "TBD"
-  task: "binary_classification"   # fake vs real
+  name: "kaggle_isot_fake_and_real_news"
+  source: "kaggle/clmentbisaillon/fake-and-real-news-dataset"
+  task: "binary_classification"
   text_column: "text"
+  title_column: "title"            # optional: can concatenate title+text
   label_column: "label"
+  optional_columns: ["subject", "date"]
   label_mapping:
     fake: 1
     real: 0
@@ -16,11 +18,13 @@ schema:
   allow_empty_text: false
 
 splits:
-  strategy: "stratified"
+  strategy: "stratified"           # v1 default
   train_size: 0.8
   val_size: 0.1
   test_size: 0.1
   random_seed: 42
+  # v1.1 enhancement: time-based split if `date` parses successfully
+  allow_time_split: true
 
 data_quality:
   max_null_text_pct: 0.0
@@ -29,7 +33,6 @@ data_quality:
 
 leakage:
   check_exact_duplicates_across_splits: true
-  # near-duplicate can be added later (e.g., minhash / simhash)
   check_near_duplicates_across_splits: false
 
 sampling_for_ci:

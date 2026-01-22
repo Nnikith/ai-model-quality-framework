@@ -24,6 +24,8 @@ dev = [
   "mypy>=1.8",
   "pre-commit>=3.6",
   "rich>=13.7",
+  "pyarrow>=15.0",
+
 ]
 nlp = [
   "nltk>=3.8",
