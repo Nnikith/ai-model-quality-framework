@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/ai_model_quality_framework.egg-info/PKG-INFO
+src/ai_model_quality_framework.egg-info/SOURCES.txt
+src/ai_model_quality_framework.egg-info/dependency_links.txt
+src/ai_model_quality_framework.egg-info/requires.txt
+src/ai_model_quality_framework.egg-info/top_level.txt
+src/fakenews/__init__.py
