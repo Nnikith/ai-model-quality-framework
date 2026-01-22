@@ -35,6 +35,12 @@ jobs:
           uv pip install -e .
           uv pip install pandas numpy scikit-learn joblib pydantic fastapi uvicorn httpx pyarrow
 
+      - name: Generate processed dataset
+        run: |
+          python scripts/ingest_isot.py \
+            --true-csv data/raw/isot/True.csv \
+            --fake-csv data/raw/isot/Fake.csv
+
       - name: Run data drift report
         run: |
           python scripts/run_drift_report.py --out artifacts/monitoring/drift_report.json
