@@ -46,12 +46,4 @@ Both models share the same serving contract and monitoring interfaces.
 
 ---
 
-## Why this repo exists
 
-This project is intentionally opinionated:
-
-- assumptions are documented and tested
-- robustness is enforced, not implied
-- CI acts as a quality gate, not a syntax checker
-
-It is designed to support ML Engineer, AI Quality Engineer, and MLOps-focused roles.
