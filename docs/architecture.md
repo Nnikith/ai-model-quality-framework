@@ -47,7 +47,43 @@ Out of scope:
    - each stage communicates via explicit artifacts
 
 ---
+## System Flow
+```Mermaid
+flowchart TD
+  A[Raw Data<br/>data/raw/isot or data/raw/sample] --> B[Ingestion<br/>scripts/ingest_isot.py]
+  B --> C[Validation रिपोर्ट<br/>artifacts/reports/data_validation.json]
+  B --> D[Processed Dataset<br/>data/processed/isot.parquet]
+  B --> E[Split Manifest<br/>artifacts/reports/split_manifest.json]
 
+  D --> F[Train v1<br/>scripts/train_v1.py]
+  D --> G[Train v2<br/>scripts/train_v2.py]
+
+  F --> H[v1 Artifacts<br/>artifacts/models/v1]
+  F --> I[v1 Metrics<br/>artifacts/reports/eval_metrics_v1.json]
+
+  G --> J[v2 Artifacts<br/>artifacts/models/v2]
+  G --> K[v2 Metrics<br/>artifacts/reports/eval_metrics_v2.json]
+
+  I --> L[Eval Gates<br/>src/fakenews/evaluation/gates.py]
+  K --> L
+
+  H --> M[API Serving<br/>src/fakenews/serving/api.py]
+  J --> M
+
+  D --> N[Monitoring Drift<br/>scripts/run_drift_report.py]
+  D --> O[Monitoring Pred Drift<br/>scripts/run_prediction_drift.py]
+  M --> O
+
+  N --> P[drift_report.json]
+  O --> Q[pred_drift_report.json]
+
+  R[CI Workflow] --> B
+  R --> F
+  R --> G
+  R --> S[Pytest<br/>unit + integration + e2e]
+  S --> M
+```
+---
 ## High-level component map
 
 The repository is organized around **clear system responsibilities** rather than implementation convenience.
@@ -411,3 +447,4 @@ Model-specific details are captured in the model cards rather than duplicated he
 - **[Model Card: v2](model-card-v2.md)** — robustness upgrade and guarantees
 - **[CI/CD](ci-cd.md)** — how CI enforces model quality
 - **[Monitoring](monitoring.md)** — drift detection and monitoring outputs
+
