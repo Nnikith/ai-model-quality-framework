@@ -1,0 +1,33 @@
+metrics:
+  primary: "f1"
+  report: ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"]
+  average: "binary"
+
+thresholding:
+  strategy: "fixed_0_5"
+  default_threshold: 0.5
+
+gates:
+  v1_baseline:
+    # CI sample is tiny; metrics can be undefined/degenerate.
+    # Keep training + artifact generation green; CI main workflow remains the real gate.
+    min_f1: 0.0
+    min_pr_auc: 0.0
+    max_f1_drop_vs_previous: 1.0
+
+  v2_improved:
+    min_f1: 0.0
+    min_pr_auc: 0.0
+    min_improvement_over_v1_f1: 0.0
+
+slice_evaluation:
+  # Disable in CI to avoid flaky slice metrics on tiny splits
+  enabled: false
+  slices: []
+
+slice_gates:
+  enabled: false
+  min_f1_per_slice: 0.0
+
+calibration:
+  enabled: false

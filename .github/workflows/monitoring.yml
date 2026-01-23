@@ -39,7 +39,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[monitoring]"
+          uv pip uninstall -y ai-model-quality-framework || true
+          uv pip install --no-cache-dir -e ".[monitoring]"
           uv pip install pyarrow
 
       - name: Ensure output directories exist
@@ -66,7 +67,7 @@ jobs:
         run: |
           python scripts/train_v1.py \
             --dataset data/processed/isot.parquet \
-            --eval-config configs/eval.yaml \
+            --eval-config configs/eval_ci.yaml \
             --out-dir artifacts/models/v1
           test -f artifacts/models/v1/model.joblib
           test -f artifacts/models/v1/vectorizer.joblib

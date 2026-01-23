@@ -6,8 +6,8 @@ from pathlib import Path
 import yaml
 
 from fakenews.data.ingest_isot import (
-    load_isot,
     add_ids,
+    load_isot,
     stratified_split,
     to_canonical,
     write_outputs,
@@ -21,9 +21,15 @@ def main() -> int:
     )
     parser.add_argument("--true-csv", default="data/raw/isot/True.csv")
     parser.add_argument("--fake-csv", default="data/raw/isot/Fake.csv")
-    parser.add_argument("--config", default="configs/data.yaml", help="Path to data config yaml")
     parser.add_argument(
-        "--out", default="data/processed/isot.parquet", help="Output processed dataset path"
+        "--config",
+        default="configs/data.yaml",
+        help="Path to data config yaml",
+    )
+    parser.add_argument(
+        "--out",
+        default="data/processed/isot.parquet",
+        help="Output processed dataset path",
     )
     parser.add_argument(
         "--manifest",
@@ -47,6 +53,7 @@ def main() -> int:
     val_size = float(splits["val_size"])
     test_size = float(splits["test_size"])
 
+    # If CI config requests "all-train" behavior, bypass splitting entirely.
     if val_size == 0.0 and test_size == 0.0:
         df_split = df_raw.copy()
         df_split["split"] = "train"
@@ -63,7 +70,9 @@ def main() -> int:
 
     # Validate and write report
     result = validate_dataframe(
-        df_can, dataset_name=cfg["dataset"]["name"], report_path=args.report
+        df_can,
+        dataset_name=cfg["dataset"]["name"],
+        report_path=args.report,
     )
     if not result.passed:
         print("❌ Data validation failed:")
