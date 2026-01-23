@@ -46,7 +46,22 @@ def main() -> int:
     cfg = yaml.safe_load(Path(args.config).read_text())
     splits = cfg["splits"]
 
-    df_raw = load_isot(args.true_csv, args.fake_csv)
+    # Choose input CSVs based on config dataset source unless user explicitly overrides.
+    source = cfg["dataset"].get("source", "kaggle")
+    true_csv = args.true_csv
+    fake_csv = args.fake_csv
+
+    # If user did not override defaults and config says repo_sample, use repo sample paths.
+    if (
+        source == "repo_sample"
+        and args.true_csv == "data/raw/isot/True.csv"
+        and args.fake_csv == "data/raw/isot/Fake.csv"
+    ):
+        true_csv = "data/raw/sample/true.csv"
+        fake_csv = "data/raw/sample/fake.csv"
+
+    df_raw = load_isot(true_csv, fake_csv)
+
     df_raw = add_ids(df_raw)
 
     train_size = float(splits["train_size"])
