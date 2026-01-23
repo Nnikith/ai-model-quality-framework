@@ -48,7 +48,7 @@ Out of scope:
 
 ---
 ## System Flow
-```Mermaid
+```mermaid
 flowchart TD
   A[Raw Data<br/>data/raw/isot or data/raw/sample] --> B[Ingestion<br/>scripts/ingest_isot.py]
   B --> C[Validation रिपोर्ट<br/>artifacts/reports/data_validation.json]
@@ -447,4 +447,5 @@ Model-specific details are captured in the model cards rather than duplicated he
 - **[Model Card: v2](model-card-v2.md)** — robustness upgrade and guarantees
 - **[CI/CD](ci-cd.md)** — how CI enforces model quality
 - **[Monitoring](monitoring.md)** — drift detection and monitoring outputs
+
 
