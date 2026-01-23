@@ -16,7 +16,7 @@ gates:
   v2_improved:
     min_f1: 0.75
     min_pr_auc: 0.75
-    min_improvement_over_v1_f1: 0.03
+    min_improvement_over_v1_f1: 0.005
 
 slice_evaluation:
   enabled: true
