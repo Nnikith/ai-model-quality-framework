@@ -1,0 +1,23 @@
+model:
+  version: "v2"
+
+vectorizer:
+  # Char n-gram TF-IDF is more typo-robust than word TF-IDF
+  type: "tfidf"
+  analyzer: "char_wb"
+  ngram_range: [3, 5]
+  max_features: 100000
+  lowercase: true
+  strip_accents: "unicode"
+
+  # min_df means "ignore super-rare features".
+  # On tiny CI datasets, min_df=2 can sometimes be too strict, so we keep a CI fallback.
+  min_df_default: 2
+  min_df_ci: 1
+
+classifier:
+  # Linear model, fast + strong baseline for text classification
+  type: "logreg"
+  max_iter: 3000
+  class_weight: "balanced"
+  random_state: 42

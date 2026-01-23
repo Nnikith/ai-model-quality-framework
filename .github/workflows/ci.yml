@@ -46,6 +46,18 @@ jobs:
         run: |
           ruff check . -v
 
+      - name: Build processed dataset (CI sample)
+        run: |
+          python scripts/ingest_isot.py --config configs/data_ci.yaml
+
+      - name: Train v1 (CI)
+        run: |
+          python scripts/train_v1.py --eval-config configs/eval_ci.yaml
+
+      - name: Train v2 (CI)
+        run: |
+          python scripts/train_v2.py --eval-config configs/eval_ci.yaml
+
       - name: Test (pytest)
         run: |
           pytest -q -vv

@@ -1,0 +1,18 @@
+model:
+  version: "v1"
+
+vectorizer:
+  type: "tfidf"
+  analyzer: "word"
+  ngram_range: [1, 2]
+  max_features: 50000
+  lowercase: true
+  strip_accents: "unicode"
+  min_df_default: 2
+  min_df_ci: 1
+
+classifier:
+  type: "logreg"
+  max_iter: 2000
+  class_weight: "balanced"
+  random_state: 42

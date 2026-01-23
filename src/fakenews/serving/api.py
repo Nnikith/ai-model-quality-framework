@@ -48,7 +48,7 @@ def load_bundle(model_dir: Path = DEFAULT_MODEL_DIR) -> ModelBundle:
     return ModelBundle(
         model=model,
         vectorizer=vectorizer,
-        model_version="v1",
+        model_version=model_dir.name,
         model_dir=str(model_dir),
     )
 

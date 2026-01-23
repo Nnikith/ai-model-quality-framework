@@ -27,3 +27,5 @@ artifacts/**
 *.egg-info/
 build/
 dist/
+handover_files.zip
+handover_files.zip

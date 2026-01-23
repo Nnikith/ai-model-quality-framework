@@ -11,6 +11,11 @@ def _client():
     return TestClient(app)
 
 
+def _client_v2():
+    app = create_app(model_dir=Path("artifacts/models/v2"))
+    return TestClient(app)
+
+
 def _skip_if_model_not_loaded(client: TestClient):
     h = client.get("/health")
     if not h.json().get("model_loaded", False):
@@ -55,11 +60,13 @@ def test_invariance_case_and_punctuation_small_change():
     assert max(probs) - min(probs) <= 0.20
 
 
-@pytest.mark.xfail(
-    reason="Known limitation of TF-IDF v1 baseline: sensitive to tokenization and typos. Expected to improve in v2.",
-    strict=False,
-)
-def test_invariance_minor_typos():
+def test_v1_invariance_minor_typos_documents_limitation():
+    """
+    v1 has NO guaranteed typo robustness.
+    If v1 behaves badly (large probability swing), we DOCUMENT it as xfail.
+    If v1 happens to behave well on this run, we allow it to pass silently
+    (avoids noisy XPASS output and avoids flaky expectations).
+    """
     client = _client()
     _skip_if_model_not_loaded(client)
 
@@ -68,13 +75,42 @@ def test_invariance_minor_typos():
 
     r1 = client.post("/predict", json={"text": base})
     r2 = client.post("/predict", json={"text": typo})
-    assert r1.status_code == 200 and r2.status_code == 200
+    assert r1.status_code == 200
+    assert r2.status_code == 200
 
     p1 = r1.json()["probability_fake"]
     p2 = r2.json()["probability_fake"]
 
-    # We still measure it; the xfail documents that v1 is not robust to typos.
-    assert abs(p1 - p2) <= 0.30
+    # If the model swings too much, that's exactly the documented v1 weakness.
+    if abs(p1 - p2) > 0.20:
+        pytest.xfail("v1 has no typo-robustness guarantee (word TF-IDF can be sensitive)")
+
+    # Otherwise, we pass: v1 happened to be stable for this specific example/run.
+    assert True
+
+
+def test_v2_invariance_minor_typos():
+    """
+    v2 MUST be typo-robust within a defined tolerance.
+    This is an enforced robustness contract for the upgraded model.
+    """
+    client = _client_v2()
+    _skip_if_model_not_loaded(client)
+
+    base = "Scientists report a new discovery in renewable energy technology."
+    typo = "Scientsits repot a new discovry in reneweble enegy technlogy."
+
+    r1 = client.post("/predict", json={"text": base})
+    r2 = client.post("/predict", json={"text": typo})
+
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+
+    p1 = r1.json()["probability_fake"]
+    p2 = r2.json()["probability_fake"]
+
+    # v2 should be meaningfully more robust than v1
+    assert abs(p1 - p2) <= 0.20
 
 
 def test_ood_gibberish_handling():
